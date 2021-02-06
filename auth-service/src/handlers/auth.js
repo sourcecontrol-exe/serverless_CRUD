@@ -24,7 +24,6 @@ export async function handler(event, context) {
   }
 
   const token = event.authorizationToken.replace('Bearer ', '');
-  //const Token = event.headers.Authorization.split(" ")[1]
 
   try {
      const claims = jwt.verify(token, process.env.AUTH0_PUBLIC_KEY);
