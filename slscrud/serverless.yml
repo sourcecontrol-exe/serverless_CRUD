@@ -1,0 +1,63 @@
+service:
+  name: slscrud
+
+plugins:
+  - serverless-bundle
+  - serverless-pseudo-parameters
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  memorySize: 256
+  stage: ${opt:stage, 'dev'}
+  profile: swetabhAlternate
+  environment:
+    TABLE_NAME: ${self:custom.CrudTable.name}
+  iamRoleStatements:
+    - ${file(iam/CrudTableIAM.yml):CrudTableIAM}
+
+resources:
+  Resources:
+    CrudTable: ${file(resources/CrudTable.yml):CrudTable}
+  
+functions:
+  createUser:
+    handler: src/handlers/create.handler
+    events:
+      - http:
+          method: POST
+          path: /user
+          authorizer: ${self:custom.authorizer}
+
+
+  getUsers:
+    handler: src/handlers/getUsers.handler
+    events:
+      - http:
+          method: GET
+          path: /users
+          
+#get user endpoint is not protected anyone can get the list of users          
+  
+  getUser:
+    handler: src/handlers/getUser.handler
+    events:
+      - http:
+          method: GET
+          path: /user/{id}
+          authorizer: ${self:custom.authorizer}
+  
+  UpdateUser:
+    handler: src/handlers/updateUser.handler
+    events:
+      - http:
+          method: PATCH
+          path: /user/{id}
+          authorizer: ${self:custom.authorizer}
+  
+#custom variables are used in this so that to effectivly differentiate between dev and prod environment
+custom:
+  authorizer: arn:aws:lambda:us-east-1:#{AWS::AccountId}:function:auth-service-${self:provider.stage}-auth
+  CrudTable:
+    name: !Ref CrudTable
+    arn : !GetAtt CrudTable.Arn
